@@ -67,8 +67,8 @@ sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
 %{_libdir}/cmake/Dtk6DConfig/
 %{_libdir}/cmake/Dtk6Tools/
 %{_libdir}/pkgconfig/dtk6core.pc
-#{_qt6_archdatadir}/mkspecs/modules/*.pri
-#{_qt6_archdatadir}/mkspecs/features/*.prf
+%{_libdir}/qt6/mkspecs/features/dtk_install_dconfig.prf
+%{_libdir}/qt6/mkspecs/modules/qt_lib_dtkcore.pri
 
 %changelog
 %autochangelog
