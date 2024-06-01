@@ -1,3 +1,6 @@
+%define libname %mklibname dtk6core
+%define devname %mklibname -d dtk6core
+
 Name:           dtk6core
 Version:        6.0.16
 Release:        1
@@ -15,9 +18,6 @@ BuildRequires:  cmake(Qt6DBus)
 BuildRequires:  cmake(Qt6Xml)
 BuildRequires:  cmake(Qt6ToolsTools)
 BuildRequires:  cmake(Qt6Concurrent)
-#BuildRequires:  qt6-qtbase-private-devel
-%{?_qt6:Requires: %{_qt6}%{?_isa} = %{_qt6_version}}
-
 BuildRequires:  cmake(DtkBuildHelper)
 BuildRequires:  cmake(spdlog)
 BuildRequires:  pkgconfig(icu-uc)
@@ -28,12 +28,18 @@ BuildRequires:  pkgconfig(libsystemd)
 %description
 Deepin tool kit core modules.
 
-%package        devel
-Summary:        Development files for %{name}
-Requires:       %{name}%{?_isa} = %{version}-%{release}
-Requires:       dtkcommon-devel%{_isa}
+%package -n %{libname}
+Summary:        Shared library for %{name}
 
-%description    devel
+%description -n %{libname}
+Libs for deepin tool kit core modules.
+
+%package -n %{devname}
+Summary:        Development files for %{name}
+Requires:	    %{libname} = %{EVRD}
+Requires:       cmake(Dtk6)
+
+%description -n %{devname}
 This package contains development files for %{name}.
 
 %prep
@@ -51,14 +57,14 @@ sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
 %install
 %make_install -C build
 
-%files
+%files -n %{libname} 
 %license LICENSE
 %doc README.md
 %{_libdir}/libdtk6core.so.6*
 %dir %{_libexecdir}/dtk6
 %{_libexecdir}/dtk6/DCore/
 
-%files devel
+%files -n %{devname}
 %{_libdir}/libdtk6core.so
 %dir %{_includedir}/dtk6
 %{_includedir}/dtk6/DCore/
@@ -69,6 +75,3 @@ sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
 %{_libdir}/pkgconfig/dtk6core.pc
 %{_libdir}/qt6/mkspecs/features/dtk_install_dconfig.prf
 %{_libdir}/qt6/mkspecs/modules/qt_lib_dtkcore.pri
-
-%changelog
-%autochangelog
