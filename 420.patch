@@ -1,0 +1,49 @@
+From d46bd75a1a63adc1fac78c5b2cc6df2e0dd4cb7d Mon Sep 17 00:00:00 2001
+From: ck <chenke@deepin.org>
+Date: Fri, 24 May 2024 09:15:02 +0800
+Subject: [PATCH] fix(build): build faild on Qt 6.7.1
+
+QAbstractFileEngine::FileTime ==> QFile::FileTime
+---
+ src/dci/private/ddcifileengine.cpp | 7 +++++++
+ src/dci/private/ddcifileengine_p.h | 4 ++++
+ 2 files changed, 11 insertions(+)
+
+diff --git a/src/dci/private/ddcifileengine.cpp b/src/dci/private/ddcifileengine.cpp
+index f1de7abe..bf2090d1 100644
+--- a/src/dci/private/ddcifileengine.cpp
++++ b/src/dci/private/ddcifileengine.cpp
+@@ -531,10 +531,17 @@ void DDciFileEngine::setFileName(const QString &fullPath)
+     file = getDciFile(dciFilePath, QFile::exists(dciFilePath));
+ }
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 1)
++QDateTime DDciFileEngine::fileTime(QFile::FileTime time) const
++{
++    return QFileInfo(dciFilePath).fileTime(time);
++}
++#else
+ QDateTime DDciFileEngine::fileTime(QAbstractFileEngine::FileTime time) const
+ {
+     return QFileInfo(dciFilePath).fileTime(static_cast<QFile::FileTime>(time));
+ }
++#endif
+ 
+ DDciFileEngine::Iterator *DDciFileEngine::beginEntryList(QDir::Filters filters, const QStringList &filterNames)
+ {
+diff --git a/src/dci/private/ddcifileengine_p.h b/src/dci/private/ddcifileengine_p.h
+index 9b8af442..143365d8 100644
+--- a/src/dci/private/ddcifileengine_p.h
++++ b/src/dci/private/ddcifileengine_p.h
+@@ -95,7 +95,11 @@ class DDciFileEngine : public QAbstractFileEngine
+ 
+     void setFileName(const QString &fullPath) override;
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 1)
++    QDateTime fileTime(QFile::FileTime time) const override;
++#else
+     QDateTime fileTime(FileTime time) const override;
++#endif
+ 
+     typedef DDciFileEngineIterator Iterator;
+     Iterator *beginEntryList(QDir::Filters filters, const QStringList &filterNames) override;
