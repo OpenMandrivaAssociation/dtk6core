@@ -38,6 +38,7 @@ Libs for deepin tool kit core modules.
 Summary:        Development files for %{name}
 Requires:	    %{libname} = %{EVRD}
 Requires:       cmake(Dtk6)
+Provides:       dtk6core-devel = %{EVRD}
 
 %description -n %{devname}
 This package contains development files for %{name}.
