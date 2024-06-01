@@ -46,7 +46,7 @@ sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
     -DBUILD_WITH_SYSTEMD=ON \
     -DDTK_VERSION=%{version} \
 
-%cmake_build
+%make_build
 
 %install
 %make_install -C build
