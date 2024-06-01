@@ -1,13 +1,13 @@
 Name:           dtk6core
 Version:        6.0.16
-Release:        %autorelease
+Release:        1
 Summary:        Deepin tool kit core modules
 License:        LGPL-3.0-or-later
+Group:          System/Deepin
 URL:            https://github.com/linuxdeepin/dtk6core
-Source0:        %{url}/archive/%{version}/%{name}-%{version}.tar.gz
+Source0:        https://github.com/linuxdeepin/dtk6core/archive/%{version}/%{name}-%{version}.tar.gz
 Patch0:         https://github.com/linuxdeepin/dtkcore/pull/420.patch
 
-BuildRequires:  gcc-c++
 BuildRequires:  cmake
 
 BuildRequires:  cmake(Qt6Core)
@@ -15,7 +15,7 @@ BuildRequires:  cmake(Qt6DBus)
 BuildRequires:  cmake(Qt6Xml)
 BuildRequires:  cmake(Qt6ToolsTools)
 BuildRequires:  cmake(Qt6Concurrent)
-BuildRequires:  qt6-qtbase-private-devel
+#BuildRequires:  qt6-qtbase-private-devel
 %{?_qt6:Requires: %{_qt6}%{?_isa} = %{_qt6_version}}
 
 BuildRequires:  cmake(DtkBuildHelper)
@@ -23,7 +23,7 @@ BuildRequires:  cmake(spdlog)
 BuildRequires:  pkgconfig(icu-uc)
 BuildRequires:  pkgconfig(uchardet)
 BuildRequires:  pkgconfig(libsystemd)
-BuildRequires:  libasan
+#BuildRequires:  libasan
 
 %description
 Deepin tool kit core modules.
@@ -49,7 +49,7 @@ sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
 %cmake_build
 
 %install
-%cmake_install
+%make_install -C build
 
 %files
 %license LICENSE
