@@ -9,7 +9,6 @@ License:        LGPL-3.0-or-later
 Group:          System/Deepin
 URL:            https://github.com/linuxdeepin/dtk6core
 Source0:        https://github.com/linuxdeepin/dtk6core/archive/%{version}/%{name}-%{version}.tar.gz
-Patch0:         https://github.com/linuxdeepin/dtkcore/pull/420.patch
 
 BuildRequires:  cmake
 
