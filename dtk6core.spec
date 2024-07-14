@@ -2,8 +2,8 @@
 %define devname %mklibname -d dtk6core
 
 Name:           dtk6core
-Version:        6.0.16
-Release:        2
+Version:        6.0.18
+Release:        1
 Summary:        Deepin tool kit core modules
 License:        LGPL-3.0-or-later
 Group:          System/Deepin
