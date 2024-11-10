@@ -3,7 +3,7 @@
 
 Name:           dtk6core
 Version:        6.0.18
-Release:        2
+Release:        3
 Summary:        Deepin tool kit core modules
 License:        LGPL-3.0-or-later
 Group:          System/Deepin
