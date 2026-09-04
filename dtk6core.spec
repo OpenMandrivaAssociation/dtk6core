@@ -19,6 +19,7 @@ BuildRequires:  cmake(Qt6Xml)
 BuildRequires:  cmake(Qt6ToolsTools)
 BuildRequires:  cmake(Qt6Concurrent)
 BuildRequires:  cmake(DtkBuildHelper)
+BuildRequires:  cmake(DtkLog)
 BuildRequires:  cmake(spdlog)
 BuildRequires:  pkgconfig(icu-uc)
 BuildRequires:  pkgconfig(uchardet)
@@ -47,6 +48,8 @@ This package contains development files for %{name}.
 %autosetup -p1
 # comply with dtkcore in Fedora and dtk6core in Arch Linux
 sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
+# 6.0.18 looks for Dtk6Log; cooker dtk6log 0.0.1 still installs DtkLog
+sed -i 's/Dtk6Log/DtkLog/g' src/CMakeLists.txt
 
 %build
 %cmake \
