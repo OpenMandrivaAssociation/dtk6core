@@ -15,7 +15,9 @@ BuildRequires:  cmake
 BuildRequires:  ninja
 
 BuildRequires:  cmake(Qt6Core)
+BuildRequires:  cmake(Qt6CorePrivate)
 BuildRequires:  cmake(Qt6DBus)
+BuildRequires:  cmake(Qt6DBusPrivate)
 BuildRequires:  cmake(Qt6Xml)
 BuildRequires:  cmake(Qt6ToolsTools)
 BuildRequires:  cmake(Qt6Concurrent)
@@ -48,6 +50,11 @@ This package contains development files for %{name}.
 %autosetup -p1
 # comply with dtkcore in Fedora and dtk6core in Arch Linux
 sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
+# Qt 6.11 no longer creates Qt6::CorePrivate from COMPONENTS Core
+sed -i \
+	-e 's/COMPONENTS Core)/COMPONENTS Core CorePrivate)/' \
+	-e 's/COMPONENTS DBus)/COMPONENTS DBus DBusPrivate)/' \
+	src/CMakeLists.txt tools/*/CMakeLists.txt
 
 %build
 %cmake \
