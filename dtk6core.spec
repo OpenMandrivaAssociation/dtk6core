@@ -2,13 +2,14 @@
 %define devname %mklibname -d dtk6core
 
 Name:           dtk6core
-Version:        6.0.18
-Release:        4
+Version:        6.0.16
+Release:        3
 Summary:        Deepin tool kit core modules
 License:        LGPL-3.0-or-later
 Group:          System/Deepin
 URL:            https://github.com/linuxdeepin/dtk6core
 Source0:        https://github.com/linuxdeepin/dtk6core/archive/%{version}/%{name}-%{version}.tar.gz
+Patch0:         https://github.com/linuxdeepin/dtkcore/pull/420.patch
 
 BuildRequires:  cmake
 BuildRequires:  ninja
@@ -19,7 +20,6 @@ BuildRequires:  cmake(Qt6Xml)
 BuildRequires:  cmake(Qt6ToolsTools)
 BuildRequires:  cmake(Qt6Concurrent)
 BuildRequires:  cmake(DtkBuildHelper)
-BuildRequires:  cmake(DtkLog)
 BuildRequires:  cmake(spdlog)
 BuildRequires:  pkgconfig(icu-uc)
 BuildRequires:  pkgconfig(uchardet)
@@ -37,7 +37,7 @@ Libs for deepin tool kit core modules.
 
 %package -n %{devname}
 Summary:        Development files for %{name}
-Requires:	    %{libname} = %{EVRD}
+Requires:	%{libname} = %{EVRD}
 Requires:       cmake(Dtk6)
 Provides:       dtk6core-devel = %{EVRD}
 
@@ -48,12 +48,6 @@ This package contains development files for %{name}.
 %autosetup -p1
 # comply with dtkcore in Fedora and dtk6core in Arch Linux
 sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
-# 6.0.18 does find_package(Dtk${DTK_VERSION_MAJOR}Log) → Dtk6Log.
-# Cooker dtk6log 0.0.1 still exports DtkLog / Dtk::Log.
-sed -i \
-	-e 's/find_package(Dtk${DTK_VERSION_MAJOR}Log REQUIRED)/find_package(DtkLog REQUIRED)/' \
-	-e 's/Dtk${DTK_VERSION_MAJOR}::Log/Dtk::Log/g' \
-	src/CMakeLists.txt
 
 %build
 %cmake \
@@ -66,7 +60,7 @@ sed -i \
 %install
 %ninja_install -C build
 
-%files -n %{libname} 
+%files -n %{libname}
 %license LICENSE
 %doc README.md
 %{_libdir}/libdtk6core.so.6*
