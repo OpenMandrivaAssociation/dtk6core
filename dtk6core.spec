@@ -48,8 +48,12 @@ This package contains development files for %{name}.
 %autosetup -p1
 # comply with dtkcore in Fedora and dtk6core in Arch Linux
 sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
-# 6.0.18 looks for Dtk6Log; cooker dtk6log 0.0.1 still installs DtkLog
-sed -i 's/Dtk6Log/DtkLog/g' src/CMakeLists.txt
+# 6.0.18 does find_package(Dtk${DTK_VERSION_MAJOR}Log) → Dtk6Log.
+# Cooker dtk6log 0.0.1 still exports DtkLog / Dtk::Log.
+sed -i \
+	-e 's/find_package(Dtk${DTK_VERSION_MAJOR}Log REQUIRED)/find_package(DtkLog REQUIRED)/' \
+	-e 's/Dtk${DTK_VERSION_MAJOR}::Log/Dtk::Log/g' \
+	src/CMakeLists.txt
 
 %build
 %cmake \
