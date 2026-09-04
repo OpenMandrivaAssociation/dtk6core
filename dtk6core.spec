@@ -11,6 +11,7 @@ URL:            https://github.com/linuxdeepin/dtk6core
 Source0:        https://github.com/linuxdeepin/dtk6core/archive/%{version}/%{name}-%{version}.tar.gz
 
 BuildRequires:  cmake
+BuildRequires:  ninja
 
 BuildRequires:  cmake(Qt6Core)
 BuildRequires:  cmake(Qt6DBus)
@@ -51,11 +52,12 @@ sed -i 's|/etc/os-version|/etc/uos-version|' src/dsysinfo.cpp
 %cmake \
     -DBUILD_WITH_SYSTEMD=ON \
     -DDTK_VERSION=%{version} \
+    -G Ninja
 
-%make_build
+%ninja_build
 
 %install
-%make_install -C build
+%ninja_install -C build
 
 %files -n %{libname} 
 %license LICENSE
