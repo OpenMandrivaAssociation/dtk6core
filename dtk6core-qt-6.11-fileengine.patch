@@ -1,0 +1,345 @@
+diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-new/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp
+--- a/src/dci/private/ddcifileengine.cpp	2024-05-15 04:22:31.000000000 +0200
++++ b/src/dci/private/ddcifileengine.cpp	2026-09-05 17:29:16.728649532 +0200
+@@ -14,6 +14,7 @@
+ #undef protected
+ 
+ #include "ddcifileengine_p.h"
++#include <memory>
+ #include "dci/ddcifile.h"
+ 
+ #include <QBuffer>
+@@ -30,14 +31,24 @@
+ #define DCI_FILE_SCHEME "dci:"
+ #define DCI_FILE_SUFFIX ".dci"
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++std::unique_ptr<QAbstractFileEngine> DDciFileEngineHandler::create(const QString &fileName) const
++#else
+ QAbstractFileEngine *DDciFileEngineHandler::create(const QString &fileName) const
++#endif
+ {
+     if (!fileName.startsWith(QStringLiteral(DCI_FILE_SCHEME)))
+         return nullptr;
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++    std::unique_ptr<DDciFileEngine> engine(new DDciFileEngine(fileName));
++#else
+     DDciFileEngine *engine = new DDciFileEngine(fileName);
++#endif
+     if (!engine->isValid()) {
++#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
+         delete engine;
++#endif
+         return nullptr;
+     }
+ 
+@@ -65,10 +76,10 @@
+     return shared;
+ }
+ 
++#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
+ DDciFileEngineIterator::DDciFileEngineIterator(QDir::Filters filters, const QStringList &nameFilters)
+     : QAbstractFileEngineIterator(filters, nameFilters)
+ {
+-
+ }
+ 
+ QString DDciFileEngineIterator::next()
+@@ -78,6 +89,19 @@
+ }
+ 
+ bool DDciFileEngineIterator::hasNext() const
++#else
++DDciFileEngineIterator::DDciFileEngineIterator(const QString &path, QDir::Filters filters, const QStringList &nameFilters)
++    : QAbstractFileEngineIterator(path, filters, nameFilters)
++{
++}
++
++DDciFileEngineIterator::DDciFileEngineIterator(const QString &path, QDirListing::IteratorFlags filters, const QStringList &nameFilters)
++    : QAbstractFileEngineIterator(path, filters, nameFilters)
++{
++}
++
++bool DDciFileEngineIterator::advance()
++#endif
+ {
+     if (!file) {
+         const auto paths = DDciFileEngine::resolvePath(path());
+@@ -111,6 +135,9 @@
+             continue;
+ 
+         nextValid = i;
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++        current = nextValid;
++#endif
+         return true;
+     }
+ 
+@@ -531,11 +558,29 @@
+     file = getDciFile(dciFilePath, QFile::exists(dciFilePath));
+ }
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 1)
++QDateTime DDciFileEngine::fileTime(QFile::FileTime time) const
++{
++    return QFileInfo(dciFilePath).fileTime(time);
++}
++#else
+ QDateTime DDciFileEngine::fileTime(QAbstractFileEngine::FileTime time) const
+ {
+     return QFileInfo(dciFilePath).fileTime(static_cast<QFile::FileTime>(time));
+ }
++#endif
++
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++QAbstractFileEngine::IteratorUniquePtr DDciFileEngine::beginEntryList(const QString &path, QDirListing::IteratorFlags filters, const QStringList &filterNames)
++{
++    return QAbstractFileEngine::IteratorUniquePtr(new DDciFileEngineIterator(path, filters, filterNames));
++}
+ 
++QAbstractFileEngine::IteratorUniquePtr DDciFileEngine::endEntryList()
++{
++    return nullptr;
++}
++#else
+ DDciFileEngine::Iterator *DDciFileEngine::beginEntryList(QDir::Filters filters, const QStringList &filterNames)
+ {
+     return new DDciFileEngineIterator(filters, filterNames);
+@@ -545,6 +590,7 @@
+ {
+     return nullptr;
+ }
++#endif
+ 
+ qint64 DDciFileEngine::read(char *data, qint64 maxlen)
+ {
+@@ -570,10 +616,19 @@
+     return extension == AtEndExtension;
+ }
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++DDciFileEngine::TriStateResult DDciFileEngine::cloneTo(QAbstractFileEngine *target)
++#else
+ bool DDciFileEngine::cloneTo(QAbstractFileEngine *target)
++#endif
+ {
+     const QByteArray &data = file->dataRef(subfilePath);
+-    return target->write(data.constData(), data.size()) == data.size();
++    auto ret = target->write(data.constData(), data.size()) == data.size();
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++    return ret ? DDciFileEngine::TriStateResult::Success : DDciFileEngine::TriStateResult::Failed;
++#else
++    return ret;
++#endif
+ }
+ 
+ bool DDciFileEngine::forceSave(bool writeFile) const
+diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h dtk-new/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h
+--- a/src/dci/private/ddcifileengine_p.h	2024-05-15 04:22:31.000000000 +0200
++++ b/src/dci/private/ddcifileengine_p.h	2026-09-05 17:28:18.386604313 +0200
+@@ -14,6 +14,8 @@
+ 
+ #include <QSharedPointer>
+ #include <QDateTime>
++#include <memory>
++#include <optional>
+ 
+ QT_BEGIN_NAMESPACE
+ class QBuffer;
+@@ -24,7 +26,11 @@
+ class DDciFileEngineHandler : public QAbstractFileEngineHandler
+ {
+ public:
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++    std::unique_ptr<QAbstractFileEngine> create(const QString &fileName) const override;
++#else
+     QAbstractFileEngine *create(const QString &fileName) const override;
++#endif
+ };
+ 
+ class DDciFile;
+@@ -33,10 +39,15 @@
+ {
+     friend class DDciFileEngine;
+ public:
++#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
+     DDciFileEngineIterator(QDir::Filters filters, const QStringList &nameFilters);
+-
+     QString next() override;
+     bool hasNext() const override;
++#else
++    DDciFileEngineIterator(const QString &path, QDir::Filters filters, const QStringList &nameFilters);
++    DDciFileEngineIterator(const QString &path, QDirListing::IteratorFlags filters, const QStringList &nameFilters);
++    bool advance() override;
++#endif
+ 
+     QString currentFileName() const override;
+ 
+@@ -95,11 +106,20 @@
+ 
+     void setFileName(const QString &fullPath) override;
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 1)
++    QDateTime fileTime(QFile::FileTime time) const override;
++#else
+     QDateTime fileTime(FileTime time) const override;
++#endif
+ 
+     typedef DDciFileEngineIterator Iterator;
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++    IteratorUniquePtr beginEntryList(const QString &path, QDirListing::IteratorFlags filters, const QStringList &filterNames) override;
++    IteratorUniquePtr endEntryList() override;
++#else
+     Iterator *beginEntryList(QDir::Filters filters, const QStringList &filterNames) override;
+     Iterator *endEntryList() override;
++#endif
+ 
+     qint64 read(char *data, qint64 maxlen) override;
+     qint64 write(const char *data, qint64 len) override;
+@@ -108,7 +128,11 @@
+                    ExtensionReturn *output = 0) override;
+     bool supportsExtension(Extension extension) const override;
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++    TriStateResult cloneTo(QAbstractFileEngine *target) override;
++#else
+     bool cloneTo(QAbstractFileEngine *target) override;
++#endif
+ 
+ private:
+     bool forceSave(bool writeFile = false) const;
+diff -Nru dtk-orig/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp dtk-new/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp
+--- a/src/filesystem/dcapfsfileengine.cpp	2024-05-15 04:22:31.000000000 +0200
++++ b/src/filesystem/dcapfsfileengine.cpp	2026-09-05 17:30:45.904339937 +0200
+@@ -8,12 +8,14 @@
+ 
+ #include "dcapmanager.h"
+ #include <QDebug>
++#include <memory>
+ 
+ DCORE_BEGIN_NAMESPACE
+ 
+ extern QString _d_cleanPath(const QString &path);
+ extern bool _d_isSubFileOf(const QString &filePath, const QString &directoryPath);
+ 
++#if QT_VERSION < QT_VERSION_CHECK(6, 8, 0)
+ static bool capDirIteraterHasNext(QAbstractFileEngineIterator *it)
+ {
+     const QStringList &paths = DCapManager::instance()->paths();
+@@ -28,11 +30,19 @@
+         return ret;
+     return DVtableHook::callOriginalFun(it, &QAbstractFileEngineIterator::hasNext);
+ }
++#endif
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++std::unique_ptr<QAbstractFileEngine> DCapFSFileEngineHandler::create(const QString &fileName) const
++{
++    return std::unique_ptr<QAbstractFileEngine>(new DCapFSFileEngine(fileName));
++}
++#else
+ QAbstractFileEngine *DCapFSFileEngineHandler::create(const QString &fileName) const
+ {
+     return new DCapFSFileEngine(fileName);
+ }
++#endif
+ 
+ 
+ class DCapFSFileEnginePrivate : public DObjectPrivate
+@@ -185,12 +195,21 @@
+     return ret;
+ }
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++DCapFSFileEngine::TriStateResult DCapFSFileEngine::cloneTo(QAbstractFileEngine *target)
++#else
+ bool DCapFSFileEngine::cloneTo(QAbstractFileEngine *target)
++#endif
+ {
+     D_DC(DCapFSFileEngine);
+     const QString targetPath = target->fileName(DCapFSFileEngine::AbsolutePathName);
+-    if (!d->canReadWrite(targetPath))
++    if (!d->canReadWrite(targetPath)) {
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++        return DCapFSFileEngine::TriStateResult::Failed;
++#else
+         return false;
++#endif
++    }
+     return QFSFileEngine::cloneTo(target);
+ }
+ 
+@@ -202,6 +221,7 @@
+     return QFSFileEngine::setSize(size);
+ }
+ 
++#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+ QStringList DCapFSFileEngine::entryList(QDir::Filters filters, const QStringList &filterNames) const
+ {
+     D_DC(DCapFSFileEngine);
+@@ -209,13 +229,21 @@
+         return {};
+     return QFSFileEngine::entryList(filters, filterNames);
+ }
++#endif
+ 
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++QAbstractFileEngine::IteratorUniquePtr DCapFSFileEngine::beginEntryList(const QString &path, QDirListing::IteratorFlags filters, const QStringList &filterNames)
++{
++    return QFSFileEngine::beginEntryList(path, filters, filterNames);
++}
++#else
+ QAbstractFileEngine::Iterator *DCapFSFileEngine::beginEntryList(QDir::Filters filters, const QStringList &filterNames)
+ {
+     auto ret = QFSFileEngine::beginEntryList(filters, filterNames);
+     DVtableHook::overrideVfptrFun(ret, &QAbstractFileEngineIterator::hasNext, &capDirIteraterHasNext);
+     return ret;
+ }
++#endif
+ 
+ bool DCapFSFileEngine::canReadWrite(const QString &path) const
+ {
+diff -Nru dtk-orig/dtk6core-6.0.16/src/filesystem/private/dcapfsfileengine_p.h dtk-new/dtk6core-6.0.16/src/filesystem/private/dcapfsfileengine_p.h
+--- a/src/filesystem/private/dcapfsfileengine_p.h	2024-05-15 04:22:31.000000000 +0200
++++ b/src/filesystem/private/dcapfsfileengine_p.h	2026-09-05 17:30:55.352450913 +0200
+@@ -8,13 +8,18 @@
+ #include <DObject>
+ 
+ #include <private/qfsfileengine_p.h>
++#include <memory>
+ 
+ DCORE_BEGIN_NAMESPACE
+ 
+ class DCapFSFileEngineHandler : public QAbstractFileEngineHandler
+ {
+ public:
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++    std::unique_ptr<QAbstractFileEngine> create(const QString &fileName) const override;
++#else
+     QAbstractFileEngine *create(const QString &fileName) const override;
++#endif
+ };
+ 
+ class DCapFSFileEnginePrivate;
+@@ -44,10 +49,20 @@
+ #endif
+     bool rmdir(const QString &dirName, bool recurseParentDirectories) const override;
+     FileFlags fileFlags(FileFlags type) const override;
++#if QT_VERSION >= QT_VERSION_CHECK(6, 10, 0)
++    TriStateResult cloneTo(QAbstractFileEngine *target) override;
++#else
+     bool cloneTo(QAbstractFileEngine *target) override;
++#endif
+     bool setSize(qint64 size) override;
++#if QT_VERSION < QT_VERSION_CHECK(6, 11, 0)
+     QStringList entryList(QDir::Filters filters, const QStringList &filterNames) const override;
++#endif
++#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
++    IteratorUniquePtr beginEntryList(const QString &path, QDirListing::IteratorFlags filters, const QStringList &filterNames) override;
++#else
+     Iterator *beginEntryList(QDir::Filters filters, const QStringList &filterNames) override;
++#endif
+ 
+     bool canReadWrite(const QString &path) const;
+ };
