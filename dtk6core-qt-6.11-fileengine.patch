@@ -1,14 +1,14 @@
-diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-new/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp
---- a/src/dci/private/ddcifileengine.cpp	2024-05-15 04:22:31.000000000 +0200
-+++ b/src/dci/private/ddcifileengine.cpp	2026-09-05 17:29:16.728649532 +0200
-@@ -14,6 +14,7 @@
- #undef protected
+diff -Nru dtk-base/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-rebase/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp
+--- a/src/dci/private/ddcifileengine.cpp	2026-09-05 17:41:53.858977497 +0200
++++ b/src/dci/private/ddcifileengine.cpp	2026-09-05 17:41:24.922735495 +0200
+@@ -15,6 +15,7 @@
  
  #include "ddcifileengine_p.h"
-+#include <memory>
  #include "dci/ddcifile.h"
++#include <memory>
  
  #include <QBuffer>
+ #include <QLoggingCategory>
 @@ -30,14 +31,24 @@
  #define DCI_FILE_SCHEME "dci:"
  #define DCI_FILE_SUFFIX ".dci"
@@ -76,28 +76,16 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-new/dt
          return true;
      }
  
-@@ -531,11 +558,29 @@
-     file = getDciFile(dciFilePath, QFile::exists(dciFilePath));
+@@ -543,6 +570,17 @@
  }
+ #endif
  
-+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 1)
-+QDateTime DDciFileEngine::fileTime(QFile::FileTime time) const
-+{
-+    return QFileInfo(dciFilePath).fileTime(time);
-+}
-+#else
- QDateTime DDciFileEngine::fileTime(QAbstractFileEngine::FileTime time) const
- {
-     return QFileInfo(dciFilePath).fileTime(static_cast<QFile::FileTime>(time));
- }
-+#endif
-+
 +#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
 +QAbstractFileEngine::IteratorUniquePtr DDciFileEngine::beginEntryList(const QString &path, QDirListing::IteratorFlags filters, const QStringList &filterNames)
 +{
 +    return QAbstractFileEngine::IteratorUniquePtr(new DDciFileEngineIterator(path, filters, filterNames));
 +}
- 
++
 +QAbstractFileEngine::IteratorUniquePtr DDciFileEngine::endEntryList()
 +{
 +    return nullptr;
@@ -106,7 +94,7 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-new/dt
  DDciFileEngine::Iterator *DDciFileEngine::beginEntryList(QDir::Filters filters, const QStringList &filterNames)
  {
      return new DDciFileEngineIterator(filters, filterNames);
-@@ -545,6 +590,7 @@
+@@ -552,6 +590,7 @@
  {
      return nullptr;
  }
@@ -114,7 +102,7 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-new/dt
  
  qint64 DDciFileEngine::read(char *data, qint64 maxlen)
  {
-@@ -570,10 +616,19 @@
+@@ -577,10 +616,19 @@
      return extension == AtEndExtension;
  }
  
@@ -135,9 +123,9 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine.cpp dtk-new/dt
  }
  
  bool DDciFileEngine::forceSave(bool writeFile) const
-diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h dtk-new/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h
---- a/src/dci/private/ddcifileengine_p.h	2024-05-15 04:22:31.000000000 +0200
-+++ b/src/dci/private/ddcifileengine_p.h	2026-09-05 17:28:18.386604313 +0200
+diff -Nru dtk-base/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h dtk-rebase/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h
+--- a/src/dci/private/ddcifileengine_p.h	2026-09-05 17:41:53.859090198 +0200
++++ b/src/dci/private/ddcifileengine_p.h	2026-09-05 17:41:24.913870499 +0200
 @@ -14,6 +14,8 @@
  
  #include <QSharedPointer>
@@ -176,15 +164,8 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h dtk-new/dt
  
      QString currentFileName() const override;
  
-@@ -95,11 +106,20 @@
- 
-     void setFileName(const QString &fullPath) override;
- 
-+#if QT_VERSION >= QT_VERSION_CHECK(6, 7, 1)
-+    QDateTime fileTime(QFile::FileTime time) const override;
-+#else
-     QDateTime fileTime(FileTime time) const override;
-+#endif
+@@ -102,8 +113,13 @@
+ #endif
  
      typedef DDciFileEngineIterator Iterator;
 +#if QT_VERSION >= QT_VERSION_CHECK(6, 8, 0)
@@ -197,7 +178,7 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h dtk-new/dt
  
      qint64 read(char *data, qint64 maxlen) override;
      qint64 write(const char *data, qint64 len) override;
-@@ -108,7 +128,11 @@
+@@ -112,7 +128,11 @@
                     ExtensionReturn *output = 0) override;
      bool supportsExtension(Extension extension) const override;
  
@@ -209,9 +190,9 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/dci/private/ddcifileengine_p.h dtk-new/dt
  
  private:
      bool forceSave(bool writeFile = false) const;
-diff -Nru dtk-orig/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp dtk-new/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp
+diff -Nru dtk-base/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp dtk-rebase/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp
 --- a/src/filesystem/dcapfsfileengine.cpp	2024-05-15 04:22:31.000000000 +0200
-+++ b/src/filesystem/dcapfsfileengine.cpp	2026-09-05 17:30:45.904339937 +0200
++++ b/src/filesystem/dcapfsfileengine.cpp	2026-09-05 17:41:45.540054868 +0200
 @@ -8,12 +8,14 @@
  
  #include "dcapmanager.h"
@@ -300,9 +281,9 @@ diff -Nru dtk-orig/dtk6core-6.0.16/src/filesystem/dcapfsfileengine.cpp dtk-new/d
  
  bool DCapFSFileEngine::canReadWrite(const QString &path) const
  {
-diff -Nru dtk-orig/dtk6core-6.0.16/src/filesystem/private/dcapfsfileengine_p.h dtk-new/dtk6core-6.0.16/src/filesystem/private/dcapfsfileengine_p.h
+diff -Nru dtk-base/dtk6core-6.0.16/src/filesystem/private/dcapfsfileengine_p.h dtk-rebase/dtk6core-6.0.16/src/filesystem/private/dcapfsfileengine_p.h
 --- a/src/filesystem/private/dcapfsfileengine_p.h	2024-05-15 04:22:31.000000000 +0200
-+++ b/src/filesystem/private/dcapfsfileengine_p.h	2026-09-05 17:30:55.352450913 +0200
++++ b/src/filesystem/private/dcapfsfileengine_p.h	2026-09-05 17:41:45.308694300 +0200
 @@ -8,13 +8,18 @@
  #include <DObject>
  
