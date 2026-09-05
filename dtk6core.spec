@@ -12,6 +12,8 @@ Source0:        https://github.com/linuxdeepin/dtk6core/archive/%{version}/%{nam
 Patch0:         https://github.com/linuxdeepin/dtkcore/pull/420.patch
 # Qt 6.8–6.11 QAbstractFileEngine API (create unique_ptr, advance, TriStateResult)
 Patch1:         dtk6core-qt-6.11-fileengine.patch
+# QObjectPrivate no longer takes int; QFile no longer converts from QString
+Patch2:         dtk6core-qt-6.11-log.patch
 
 BuildRequires:  cmake
 BuildRequires:  ninja

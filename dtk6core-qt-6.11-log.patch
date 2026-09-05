@@ -1,0 +1,37 @@
+--- a/src/log/dloghelper.cpp
++++ b/src/log/dloghelper.cpp
+@@ -17,8 +17,8 @@ DCORE_BEGIN_NAMESPACE
+ class DLogHelperPrivate : public QObjectPrivate {
+ public:
+     // Functions.
+-    explicit DLogHelperPrivate(int version = QObjectPrivateVersion)
+-        : QObjectPrivate(version) {
++    explicit DLogHelperPrivate(decltype(QObjectPrivateVersion) version = QObjectPrivateVersion)
++        : QObjectPrivate(version) {
+ 
+     }
+     ~DLogHelperPrivate() {
+--- a/src/log/FileAppender.cpp
++++ b/src/log/FileAppender.cpp
+@@ -16,6 +16,11 @@ std::string loggerName(const QFile &logFile)
+ {
+     return QFileInfo(logFile).fileName().toStdString();
+ }
++
++std::string loggerName(const QString &logFile)
++{
++    return QFileInfo(logFile).fileName().toStdString();
++}
+ /*!
+ @~english
+   @class Dtk::Core::FileAppender
+--- a/src/log/RollingFileAppender.cpp
++++ b/src/log/RollingFileAppender.cpp
+@@ -12,6 +12,7 @@
+ 
+ DCORE_BEGIN_NAMESPACE
+ extern std::string loggerName(const QFile &logFile);
++extern std::string loggerName(const QString &logFile);
+ /*!
+ @~english
+   @class Dtk::Core::RollingFileAppender
